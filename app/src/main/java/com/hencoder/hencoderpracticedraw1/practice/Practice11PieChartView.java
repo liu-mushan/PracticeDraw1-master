@@ -15,17 +15,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Practice11PieChartView extends View {
+    private static final String NAME = "饼图";
 
-    private float radius;
-    private List<Data> datas;
+    private float radius = 300;
+    private List<Data> mDataList;
     private Paint paint;
     private RectF rectF;
+
     private float total;
     private float max;
 
-    float startAngle = 0f; // 开始的角度
-    float sweepAngle;      // 扫过的角度
-    float lineAngle;       // 当前扇形一半的角度
+    float startAngle; // 开始的角度
+    float sweptAngle;      // 扫过的角度
+    float halfAngle;       // 当前扇形一半的角度
 
     float lineStartX = 0f; // 直线开始的X坐标
     float lineStartY = 0f; // 直线开始的Y坐标
@@ -48,59 +50,72 @@ public class Practice11PieChartView extends View {
     }
 
     private void init() {
-        radius = 300;
-        datas = new ArrayList<>();
-        Data data = new Data("Gingerbread", 10.0f, Color.WHITE);
-        datas.add(data);
-        data = new Data("Ice Cream Sandwich", 18.0f, Color.MAGENTA);
-        datas.add(data);
+        mDataList = new ArrayList<>();
+        Data data = new Data("Gingerbread", 15.0f, Color.WHITE);
+        mDataList.add(data);
+        data = new Data("Ice Cream Sandwich", 20.0f, Color.MAGENTA);
+        mDataList.add(data);
         data = new Data("Jelly Bean", 22.0f, Color.GRAY);
-        datas.add(data);
-        data = new Data("KitKat", 27.0f, Color.GREEN);
-        datas.add(data);
-        data = new Data("Lollipop", 40.0f, Color.BLUE);
-        datas.add(data);
-        data = new Data("Marshmallow", 60.0f, Color.RED);
-        datas.add(data);
-        data = new Data("Nougat", 33.5f, Color.YELLOW);
-        datas.add(data);
-        total = 0.0f;
+        mDataList.add(data);
+        data = new Data("KitKat", 28.0f, Color.GREEN);
+        mDataList.add(data);
+        data = new Data("Lollipop", 30.0f, Color.BLUE);
+        mDataList.add(data);
+        data = new Data("Marshmallow", 70.0f, Color.RED);
+        mDataList.add(data);
+        data = new Data("Nougat", 50.5f, Color.YELLOW);
+        mDataList.add(data);
+
         max = Float.MIN_VALUE;
-        for (Data d : datas) {
-            total += d.getNumber();
-            max = Math.max(max, d.getNumber());
+        total = 0;
+        for (Data data1 : mDataList) {
+            total += data1.getNumber();
+            max = Math.max(max, data1.getNumber());
         }
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        paint = new Paint();
+        paint.setAntiAlias(true);
         paint.setStrokeWidth(2);
-        paint.setTextSize(30);
-        rectF = new RectF(-300, -300, 300, 300);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.translate(canvas.getWidth() / 2 - 100, canvas.getHeight() / 2);  // 将画布(0，0)坐标点移到画布的中心
+
+        paint.setTextSize(50);
+        paint.setColor(Color.WHITE);
+        canvas.drawText(NAME, canvas.getWidth() / 2 - 100 - paint.measureText(NAME) / 2, (float) (canvas.getHeight() * 0.9), paint);
+
+        canvas.translate(canvas.getWidth() / 2 - 100, canvas.getHeight() / 2 - 100); //将canvas的原点x轴移动canvas.getWidth() / 2 - 100 y轴移动canvas.getHeight() / 2 - 100
+        rectF = new RectF(-300, -300, 300, 300);
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(30);
         startAngle = 0f; //这句代码很重要，不然有bug
-        for (Data data : datas) {
-            paint.setStyle(Paint.Style.FILL);
+
+        for (Data data : mDataList) {
             paint.setColor(data.getColor());
-            sweepAngle = data.getNumber() / total * 360f;
-            lineAngle = startAngle + sweepAngle / 2;
-            lineStartX = radius * (float) Math.cos(lineAngle / 180 * Math.PI);
-            lineStartY = radius * (float) Math.sin(lineAngle / 180 * Math.PI);
-            lineEndX = (radius + 50) * (float) Math.cos(lineAngle / 180 * Math.PI);
-            lineEndY = (radius + 50) * (float) Math.sin(lineAngle / 180 * Math.PI);
-            if (data.getNumber() == max) {
-                canvas.save();
-                canvas.translate(lineStartX * 0.1f, lineStartY * 0.1f);
-                canvas.drawArc(rectF, startAngle, sweepAngle, true, paint);
+            sweptAngle = data.getNumber() / total * 360f;
+            halfAngle = startAngle + sweptAngle / 2;
+
+            //角度=弧度*180/Math.PI
+            lineStartX = radius * (float) Math.cos(halfAngle / 180 * Math.PI);//圆弧中点的X坐标
+            lineStartY = radius * (float) Math.sin(halfAngle / 180 * Math.PI);//圆弧中点的Y坐标
+            lineEndX = (radius + 50) * (float) Math.cos(halfAngle / 180 * Math.PI);
+            lineEndY = (radius + 50) * (float) Math.sin(halfAngle / 180 * Math.PI);
+
+            if (max == data.getNumber()) {
+                canvas.save();//保存当前的状态
+                canvas.translate(0.1f * lineStartX, lineStartY * 0.1f);  // 移动画布的原点
+                canvas.drawArc(rectF, startAngle, sweptAngle, true, paint);
             } else {
-                canvas.drawArc(rectF, startAngle, sweepAngle - 2.0f, true, paint);
+                canvas.drawArc(rectF, startAngle, sweptAngle - 2f, true, paint);
             }
+
             paint.setColor(Color.WHITE);
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawLine(lineStartX, lineStartY, lineEndX, lineEndY, paint);
-            if (lineAngle > 90 && lineAngle <= 270) {
+            if (halfAngle > 90 && halfAngle <= 270) {
                 canvas.drawLine(lineEndX, lineEndY, lineEndX - 50, lineEndY, paint);
                 paint.setStyle(Paint.Style.FILL);
                 canvas.drawText(data.getName(), lineEndX - 50 - 10 - paint.measureText(data.getName()), lineEndY, paint);
@@ -109,10 +124,10 @@ public class Practice11PieChartView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 canvas.drawText(data.getName(), lineEndX + 50 + 10, lineEndY, paint);
             }
-            if (data.getNumber() == max) {
-                canvas.restore();
+            if (max == data.getNumber()) {
+                canvas.restore();//恢复save之前的状态
             }
-            startAngle += sweepAngle;
+            startAngle += sweptAngle;
         }
     }
 }
